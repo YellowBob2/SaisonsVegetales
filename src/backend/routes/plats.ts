@@ -1,3 +1,5 @@
+import { hasAnyRole } from "../authentification";
+import { forbiddenResponse, jsonResponse } from "../http";
 import {
   createplat,
   deleteplat,
@@ -7,15 +9,32 @@ import {
   updateplat,
   updateplatStock
 } from "../plats.repository";
-import { jsonResponse } from "../http";
 import { simulateOrderEmailSend } from "../services/orderMailer";
+
+function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">): Response | null {
+  if (hasAnyRole(req, roles)) {
+    return null;
+  }
+
+  return forbiddenResponse("Access denied for current role");
+}
 
 export async function handlePlatsRoutes(req: Request, url: URL): Promise<Response | null> {
   if (url.pathname === "/api/plats" && req.method === "GET") {
+    const denied = requireAnyRole(req, ["user", "admin"]);
+    if (denied) {
+      return denied;
+    }
+
     return jsonResponse({ plats: getAllplats() });
   }
 
   if (url.pathname === "/api/plats" && req.method === "POST") {
+    const denied = requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
     const body = await req.json().catch(() => null);
 
     if (!body) {
@@ -41,6 +60,11 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "PATCH") {
+    const denied = requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
     const id = Number(url.searchParams.get("id"));
     const body = await req.json().catch(() => null);
     const newStock = body?.stock;
@@ -59,6 +83,11 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "PUT") {
+    const denied = requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
     const id = Number(url.searchParams.get("id"));
     const body = await req.json().catch(() => null);
 
@@ -90,6 +119,11 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "DELETE") {
+    const denied = requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
     const id = Number(url.searchParams.get("id"));
 
     if (!Number.isInteger(id)) {
@@ -106,10 +140,20 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats/seed" && req.method === "POST") {
+    const denied = requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
     return jsonResponse(seedExampleplats());
   }
 
   if (url.pathname === "/api/plats/order" && req.method === "POST") {
+    const denied = requireAnyRole(req, ["user", "admin"]);
+    if (denied) {
+      return denied;
+    }
+
     const body = await req.json().catch(() => null);
     const inputItems = body?.items;
     const platIds = body?.platIds;

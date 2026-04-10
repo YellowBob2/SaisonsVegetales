@@ -8,6 +8,9 @@ type PlatCatalogCardsProps = {
   editingId: number | null;
   editForm: PlatInput;
   orderQuantities: Record<number, number>;
+  canOrder: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   onEditFormChange: (next: PlatInput) => void;
   onStartEdit: (plat: Plat) => void;
   onCancelEdit: () => void;
@@ -23,6 +26,9 @@ export function PlatCatalogCards({
   editingId,
   editForm,
   orderQuantities,
+  canOrder,
+  canEdit,
+  canDelete,
   onEditFormChange,
   onStartEdit,
   onCancelEdit,
@@ -108,22 +114,26 @@ export function PlatCatalogCards({
                         min={0}
                         max={plat.stock}
                         value={selectedQuantity}
-                        disabled={isUnavailable || saving}
+                        disabled={isUnavailable || saving || !canOrder}
                         onChange={(e) => onQuantityChange(plat.id, Number(e.target.value))}
                       />
                     </Form.Group>
                     <div className="d-flex gap-2">
-                      <Button size="sm" onClick={() => onStartEdit(plat)} disabled={saving}>
-                        Modifier
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline-danger"
-                        onClick={() => onDelete(plat.id)}
-                        disabled={saving}
-                      >
-                        Supprimer
-                      </Button>
+                      {canEdit && (
+                        <Button size="sm" onClick={() => onStartEdit(plat)} disabled={saving}>
+                          Modifier
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => onDelete(plat.id)}
+                          disabled={saving}
+                        >
+                          Supprimer
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
