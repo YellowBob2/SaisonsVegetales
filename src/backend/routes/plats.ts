@@ -2,11 +2,13 @@ import {
   createplat,
   deleteplat,
   getAllplats,
+  orderplats,
   seedExampleplats,
   updateplat,
   updateplatStock
 } from "../plats.repository";
 import { jsonResponse } from "../http";
+import { simulateOrderEmailSend } from "../services/orderMailer";
 
 export async function handlePlatsRoutes(req: Request, url: URL): Promise<Response | null> {
   if (url.pathname === "/api/plats" && req.method === "GET") {
@@ -105,6 +107,45 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
 
   if (url.pathname === "/api/plats/seed" && req.method === "POST") {
     return jsonResponse(seedExampleplats());
+  }
+
+  if (url.pathname === "/api/plats/order" && req.method === "POST") {
+    const body = await req.json().catch(() => null);
+    const inputItems = body?.items;
+    const platIds = body?.platIds;
+
+    const items = Array.isArray(inputItems)
+      ? inputItems
+          .map((item: unknown) => {
+            const platId = Number((item as { platId?: unknown })?.platId);
+            const quantity = Number((item as { quantity?: unknown })?.quantity);
+            return { platId, quantity };
+          })
+          .filter((item: { platId: number; quantity: number }) =>
+            Number.isInteger(item.platId) && Number.isInteger(item.quantity) && item.quantity > 0
+          )
+      : [];
+
+    const fallbackItems = Array.isArray(platIds)
+      ? platIds
+          .map((value: unknown) => Number(value))
+          .filter((id: number) => Number.isInteger(id))
+          .map((platId: number) => ({ platId, quantity: 1 }))
+      : [];
+
+    const effectiveItems = items.length > 0 ? items : fallbackItems;
+
+    if (effectiveItems.length === 0) {
+      return jsonResponse({ error: "items array with { platId, quantity } is required" }, 400);
+    }
+
+    const result = orderplats(effectiveItems);
+    simulateOrderEmailSend(result.orderedItems);
+
+    return jsonResponse({
+      ...result,
+      message: "Simulation d'envoi de mail !"
+    });
   }
 
   return null;

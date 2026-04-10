@@ -4,12 +4,15 @@ import {
   createPlatApi,
   deletePlatApi,
   fetchPlatsApi,
+  orderPlatsApi,
   updatePlatApi
 } from "./api/platsApi";
 import { PlatCreateForm } from "./components/PlatCreateForm";
-import { PlatTable } from "./components/PlatTable";
+import { PlatCatalogCards } from "./components/PlatCatalogCards";
+import { showOrderSimulationPopup } from "./services/orderSimulation";
 import { emptyPlatForm, type Plat, type PlatInput } from "./types";
 import { toPlatPayload } from "./utils/platsForm";
+import "./styles/catalog.css";
 
 export default function App() {
   const [plats, setPlats] = useState<Plat[]>([]);
@@ -20,6 +23,7 @@ export default function App() {
   const [createForm, setCreateForm] = useState<PlatInput>(emptyPlatForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<PlatInput>(emptyPlatForm);
+  const [orderQuantities, setOrderQuantities] = useState<Record<number, number>>({});
 
   async function fetchPlats() {
     setLoading(true);
@@ -28,6 +32,18 @@ export default function App() {
     try {
       const data = await fetchPlatsApi();
       setPlats(data);
+      setOrderQuantities((prev) => {
+        const next: Record<number, number> = {};
+
+        for (const plat of data) {
+          const existing = prev[plat.id] ?? 0;
+          if (existing > 0 && plat.stock > 0) {
+            next[plat.id] = Math.min(existing, plat.stock);
+          }
+        }
+
+        return next;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue.");
     } finally {
@@ -104,6 +120,11 @@ export default function App() {
     setError(null);
     try {
       await deletePlatApi(id);
+      setOrderQuantities((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
 
       if (editingId === id) {
         cancelEdit();
@@ -117,8 +138,54 @@ export default function App() {
     }
   }
 
+  function changeOrderQuantity(id: number, quantity: number) {
+    const plat = plats.find((item) => item.id === id);
+
+    if (!plat) {
+      return;
+    }
+
+    const safeQuantity = Number.isFinite(quantity)
+      ? Math.max(0, Math.min(Math.floor(quantity), plat.stock))
+      : 0;
+
+    setOrderQuantities((prev) => {
+      const next = { ...prev };
+      if (safeQuantity === 0) {
+        delete next[id];
+      } else {
+        next[id] = safeQuantity;
+      }
+
+      return next;
+    });
+  }
+
+  async function handleOrder() {
+    const items = Object.entries(orderQuantities)
+      .map(([platId, quantity]) => ({ platId: Number(platId), quantity }))
+      .filter((item) => Number.isInteger(item.platId) && item.quantity > 0);
+
+    if (items.length === 0) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await orderPlatsApi(items);
+      showOrderSimulationPopup(result.message);
+      setOrderQuantities({});
+      await fetchPlats();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <Container className="py-4">
+    <Container className="py-4 catalog-shell">
       <Row className="mb-4">
         <Col>
           <h1>Saisons Vegetales</h1>
@@ -148,18 +215,34 @@ export default function App() {
 
       <Row>
         <Col>
-          <h2 className="h5">Plats disponibles</h2>
-          <PlatTable
+          <div className="catalog-actions mb-3">
+            <h2 className="h5 mb-0">Plats disponibles</h2>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={
+                saving ||
+                loading ||
+                Object.values(orderQuantities).reduce((sum, qty) => sum + qty, 0) === 0
+              }
+              onClick={() => void handleOrder()}
+            >
+              Commander ({Object.values(orderQuantities).reduce((sum, qty) => sum + qty, 0)})
+            </button>
+          </div>
+          <PlatCatalogCards
             plats={plats}
             loading={loading}
             saving={saving}
             editingId={editingId}
             editForm={editForm}
+            orderQuantities={orderQuantities}
             onEditFormChange={setEditForm}
             onStartEdit={startEdit}
             onCancelEdit={cancelEdit}
             onSaveEdit={(id) => void saveEdit(id)}
             onDelete={(id) => void handleDelete(id)}
+            onQuantityChange={changeOrderQuantity}
           />
         </Col>
       </Row>

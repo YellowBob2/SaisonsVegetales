@@ -29,6 +29,10 @@ const updateplatStmt = db.prepare(
   "UPDATE plats SET name = ?, available_until = ?, price = ?, stock = ? WHERE id = ?"
 );
 
+const decrementplatStockByQtyStmt = db.prepare(
+  "UPDATE plats SET stock = stock - ? WHERE id = ? AND stock >= ?"
+);
+
 const deleteplatStmt = db.prepare("DELETE FROM plats WHERE id = ?");
 
 const countplatsStmt = db.prepare("SELECT COUNT(*) AS count FROM plats");
@@ -111,4 +115,75 @@ export function seedExampleplats(): { inserted: number; total: number } {
 
   const newTotal = countplatsStmt.get() as { count: number };
   return { inserted: examples.length, total: newTotal.count };
+}
+
+export type PlatOrderRequestItem = {
+  platId: number;
+  quantity: number;
+};
+
+export type OrderedPlatItem = {
+  platId: number;
+  name: string;
+  orderedQuantity: number;
+  remainingStock: number;
+};
+
+export function orderplats(items: PlatOrderRequestItem[]): {
+  orderedItems: OrderedPlatItem[];
+  unavailableIds: number[];
+  notFoundIds: number[];
+} {
+  const orderedItems: OrderedPlatItem[] = [];
+  const unavailableIds: number[] = [];
+  const notFoundIds: number[] = [];
+
+  const quantities = new Map<number, number>();
+  for (const item of items) {
+    const current = quantities.get(item.platId) ?? 0;
+    quantities.set(item.platId, current + item.quantity);
+  }
+
+  const tx = db.transaction((entries: Array<[number, number]>) => {
+    for (const [id, requestedQuantity] of entries) {
+      const existing = getplatByIdStmt.get(id) as plat | undefined;
+
+      if (!existing) {
+        notFoundIds.push(id);
+        continue;
+      }
+
+      if (existing.stock <= 0) {
+        unavailableIds.push(id);
+        continue;
+      }
+
+      const orderQuantity = Math.min(requestedQuantity, existing.stock);
+
+      if (orderQuantity <= 0) {
+        unavailableIds.push(id);
+        continue;
+      }
+
+      decrementplatStockByQtyStmt.run(orderQuantity, id, orderQuantity);
+      const updated = getplatByIdStmt.get(id) as plat | undefined;
+
+      if (updated) {
+        orderedItems.push({
+          platId: id,
+          name: updated.name,
+          orderedQuantity: orderQuantity,
+          remainingStock: updated.stock
+        });
+      }
+
+      if (requestedQuantity > orderQuantity) {
+        unavailableIds.push(id);
+      }
+    }
+  });
+
+  tx([...quantities.entries()]);
+
+  return { orderedItems, unavailableIds, notFoundIds };
 }

@@ -2,6 +2,7 @@ export {
   createplat,
   deleteplat,
   getAllplats,
+  orderplats,
   seedExampleplats,
   updateplat,
   updateplatStock

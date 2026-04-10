@@ -1,0 +1,28 @@
+:root {
+  --catalog-bg: linear-gradient(160deg, #f3f8ef 0%, #f9f4ea 100%);
+  --card-top: #4f7a3f;
+  --card-top-soft: #9ac08f;
+}
+
+.catalog-shell {
+  background: var(--catalog-bg);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+.product-card {
+  border: none;
+  border-top: 5px solid var(--card-top);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcf8 100%);
+}
+
+.product-card .card-title {
+  font-weight: 700;
+}
+
+.catalog-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}

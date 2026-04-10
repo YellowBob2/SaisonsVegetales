@@ -38,3 +38,30 @@ export async function deletePlatApi(id: number): Promise<void> {
   const response = await fetch(`/api/plats?id=${id}`, { method: "DELETE" });
   await parseOrThrow(response, "Suppression impossible.");
 }
+
+export type OrderPlatsApiResult = {
+  orderedItems: Array<{
+    platId: number;
+    name: string;
+    orderedQuantity: number;
+    remainingStock: number;
+  }>;
+  unavailableIds: number[];
+  notFoundIds: number[];
+  message: string;
+};
+
+export type OrderPlatsApiItem = {
+  platId: number;
+  quantity: number;
+};
+
+export async function orderPlatsApi(items: OrderPlatsApiItem[]): Promise<OrderPlatsApiResult> {
+  const response = await fetch("/api/plats/order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items })
+  });
+
+  return await parseOrThrow<OrderPlatsApiResult>(response, "Commande impossible.");
+}

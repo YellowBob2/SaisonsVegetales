@@ -1,4 +1,4 @@
-import { Alert, Button, Form, Spinner, Table } from "react-bootstrap";
+import { Alert, Badge, Button, Form, Spinner, Table } from "react-bootstrap";
 import type { Plat, PlatInput } from "../types";
 
 type PlatTableProps = {
@@ -12,6 +12,8 @@ type PlatTableProps = {
   onCancelEdit: () => void;
   onSaveEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  selectedIds: number[];
+  onToggleSelection: (id: number, checked: boolean) => void;
 };
 
 export function PlatTable({
@@ -24,7 +26,9 @@ export function PlatTable({
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
-  onDelete
+  onDelete,
+  selectedIds,
+  onToggleSelection
 }: PlatTableProps) {
   if (loading) {
     return (
@@ -43,6 +47,7 @@ export function PlatTable({
     <Table striped bordered hover responsive>
       <thead>
         <tr>
+          <th>Selection</th>
           <th>ID</th>
           <th>Nom</th>
           <th>Disponible jusqu'au</th>
@@ -54,9 +59,20 @@ export function PlatTable({
       <tbody>
         {plats.map((plat) => {
           const isEditing = editingId === plat.id;
+          const isUnavailable = plat.stock <= 0;
+          const isSelected = selectedIds.includes(plat.id);
 
           return (
             <tr key={plat.id}>
+              <td>
+                <Form.Check
+                  type="checkbox"
+                  checked={isSelected}
+                  disabled={isUnavailable || saving}
+                  onChange={(e) => onToggleSelection(plat.id, e.target.checked)}
+                  aria-label={`Selectionner le plat ${plat.name}`}
+                />
+              </td>
               <td>{plat.id}</td>
               <td>
                 {isEditing ? (
@@ -98,7 +114,10 @@ export function PlatTable({
                     onChange={(e) => onEditFormChange({ ...editForm, stock: e.target.value })}
                   />
                 ) : (
-                  plat.stock
+                  <>
+                    {plat.stock}
+                    {isUnavailable && <Badge bg="secondary" className="ms-2">Epuisé</Badge>}
+                  </>
                 )}
               </td>
               <td className="d-flex gap-2">
