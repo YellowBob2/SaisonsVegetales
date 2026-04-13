@@ -11,8 +11,8 @@ import {
 } from "../plats.repository";
 import { simulateOrderEmailSend } from "../services/orderMailer";
 
-function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">): Response | null {
-  if (hasAnyRole(req, roles)) {
+async function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">): Promise<Response | null> {
+  if (await hasAnyRole(req, roles)) {
     return null;
   }
 
@@ -21,7 +21,7 @@ function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">):
 
 export async function handlePlatsRoutes(req: Request, url: URL): Promise<Response | null> {
   if (url.pathname === "/api/plats" && req.method === "GET") {
-    const denied = requireAnyRole(req, ["user", "admin"]);
+    const denied = await requireAnyRole(req, ["user", "admin"]);
     if (denied) {
       return denied;
     }
@@ -30,7 +30,7 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "POST") {
-    const denied = requireAnyRole(req, ["admin"]);
+    const denied = await requireAnyRole(req, ["admin"]);
     if (denied) {
       return denied;
     }
@@ -60,7 +60,7 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "PATCH") {
-    const denied = requireAnyRole(req, ["admin"]);
+    const denied = await requireAnyRole(req, ["admin"]);
     if (denied) {
       return denied;
     }
@@ -83,7 +83,7 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "PUT") {
-    const denied = requireAnyRole(req, ["admin"]);
+    const denied = await requireAnyRole(req, ["admin"]);
     if (denied) {
       return denied;
     }
@@ -119,7 +119,7 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats" && req.method === "DELETE") {
-    const denied = requireAnyRole(req, ["admin"]);
+    const denied = await requireAnyRole(req, ["admin"]);
     if (denied) {
       return denied;
     }
@@ -140,7 +140,7 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats/seed" && req.method === "POST") {
-    const denied = requireAnyRole(req, ["admin"]);
+    const denied = await requireAnyRole(req, ["admin"]);
     if (denied) {
       return denied;
     }
@@ -149,7 +149,7 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
   }
 
   if (url.pathname === "/api/plats/order" && req.method === "POST") {
-    const denied = requireAnyRole(req, ["user", "admin"]);
+    const denied = await requireAnyRole(req, ["user", "admin"]);
     if (denied) {
       return denied;
     }

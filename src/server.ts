@@ -1,17 +1,15 @@
 import { serve } from "bun";
 import path from "path";
-import { isUserAuthenticated } from "./backend/authentification";
 import { handleApiRequest } from "./backend/routes";
 
 const port = Number(process.env.PORT ?? 3000);
+const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY ?? "";
 const frontendDir = path.join(import.meta.dir, "frontend");
 
 const server = serve({
     port,
     async fetch(req) {
         const url = new URL(req.url);
-
-        const userAuthenticated = isUserAuthenticated(req);
 
         const apiResponse = await handleApiRequest(req);
         if (apiResponse) {
@@ -39,7 +37,7 @@ const server = serve({
         }
 
         const htmlTemplate = await Bun.file(path.join(frontendDir, "index.html")).text();
-        const runtimeConfigScript = `<script></script>`;
+        const runtimeConfigScript = `<script>window.__CLERK_PUBLISHABLE_KEY__ = "${clerkPublishableKey}";</script>`;
         const html = htmlTemplate.replace("</head>", `${runtimeConfigScript}</head>`);
         return new Response(html, {
             headers: { "Content-Type": "text/html" },

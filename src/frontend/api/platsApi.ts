@@ -1,10 +1,10 @@
 import type { DemoRole } from "../auth/roles";
 import type { Plat, PlatPayload } from "../types";
 
-function roleHeaders(role: DemoRole): HeadersInit {
+function authHeaders(token: string): HeadersInit {
   return {
     "Content-Type": "application/json",
-    "x-demo-role": role
+    Authorization: `Bearer ${token}`
   };
 }
 
@@ -16,39 +16,41 @@ async function parseOrThrow<T>(response: Response, fallbackMessage: string): Pro
   return (await response.json()) as T;
 }
 
-export async function fetchPlatsApi(role: DemoRole): Promise<Plat[]> {
+export async function fetchPlatsApi(token: string): Promise<Plat[]> {
   const response = await fetch("/api/plats", {
-    headers: { "x-demo-role": role }
+    headers: authHeaders(token)
   });
+
   const data = await parseOrThrow<{ plats: Plat[] }>(response, "Impossible de charger les plats.");
   return data.plats ?? [];
 }
 
-export async function createPlatApi(role: DemoRole, payload: PlatPayload): Promise<void> {
+export async function createPlatApi(token: string, payload: PlatPayload): Promise<void> {
   const response = await fetch("/api/plats", {
     method: "POST",
-    headers: roleHeaders(role),
+    headers: authHeaders(token),
     body: JSON.stringify(payload)
   });
 
   await parseOrThrow(response, "Ajout impossible.");
 }
 
-export async function updatePlatApi(role: DemoRole, id: number, payload: PlatPayload): Promise<void> {
+export async function updatePlatApi(token: string, id: number, payload: PlatPayload): Promise<void> {
   const response = await fetch(`/api/plats?id=${id}`, {
     method: "PUT",
-    headers: roleHeaders(role),
+    headers: authHeaders(token),
     body: JSON.stringify(payload)
   });
 
   await parseOrThrow(response, "Modification impossible.");
 }
 
-export async function deletePlatApi(role: DemoRole, id: number): Promise<void> {
+export async function deletePlatApi(token: string, id: number): Promise<void> {
   const response = await fetch(`/api/plats?id=${id}`, {
     method: "DELETE",
-    headers: { "x-demo-role": role }
+    headers: authHeaders(token)
   });
+
   await parseOrThrow(response, "Suppression impossible.");
 }
 
@@ -69,9 +71,9 @@ export type OrderPlatsApiItem = {
   quantity: number;
 };
 
-export async function fetchSessionApi(role: DemoRole): Promise<{ role: DemoRole; authenticated: boolean }> {
+export async function fetchSessionApi(token: string): Promise<{ role: DemoRole; authenticated: boolean }> {
   const response = await fetch("/api/auth/session", {
-    headers: { "x-demo-role": role }
+    headers: authHeaders(token)
   });
 
   return await parseOrThrow<{ role: DemoRole; authenticated: boolean }>(
@@ -80,10 +82,10 @@ export async function fetchSessionApi(role: DemoRole): Promise<{ role: DemoRole;
   );
 }
 
-export async function orderPlatsApi(role: DemoRole, items: OrderPlatsApiItem[]): Promise<OrderPlatsApiResult> {
+export async function orderPlatsApi(token: string, items: OrderPlatsApiItem[]): Promise<OrderPlatsApiResult> {
   const response = await fetch("/api/plats/order", {
     method: "POST",
-    headers: roleHeaders(role),
+    headers: authHeaders(token),
     body: JSON.stringify({ items })
   });
 

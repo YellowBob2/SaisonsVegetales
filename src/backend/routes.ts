@@ -9,7 +9,7 @@ export async function handleApiRequest(req: Request): Promise<Response | null> {
     return null;
   }
 
-  const authResponse = handleAuthRoutes(req, url);
+  const authResponse = await handleAuthRoutes(req, url);
   if (authResponse) {
     return authResponse;
   }
