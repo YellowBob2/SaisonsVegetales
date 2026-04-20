@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { Database } from "bun:sqlite";
 
-const dbFile = join(import.meta.dir, "../../data/saisons.db");
+const dbFile = join(import.meta.dir, process.env.DATABASE_URL ?? "../../data/saisons.db");
 mkdirSync(dirname(dbFile), { recursive: true });
 
 export const db = new Database(dbFile, { create: true });
