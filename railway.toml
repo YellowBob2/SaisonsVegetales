@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [variables]
-NIXPACKS_NODE_VERSION = "20"
+NIXPACKS_NODE_VERSION = "20.11"
 
 [deploy]
 startCommand = "bun run prod"
