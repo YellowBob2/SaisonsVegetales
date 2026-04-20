@@ -1,6 +1,9 @@
 [build]
 builder = "nixpacks"
 
+[variables]
+NIXPACKS_NODE_VERSION = "20"
+
 [deploy]
 startCommand = "bun run prod"
 healthcheckPath = "/"
