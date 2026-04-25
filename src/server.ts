@@ -6,6 +6,8 @@ const port = Number(process.env.PORT ?? 3000);
 const clerkPublishableKey = process.env.CLERK_PUBLISHABLE_KEY ?? "";
 const frontendDir = path.join(import.meta.dir, "frontend");
 
+const assetsDir = path.join(import.meta.dir, "..", "assets");
+
 const server = serve({
     port,
     async fetch(req) {
@@ -14,6 +16,39 @@ const server = serve({
         const apiResponse = await handleApiRequest(req);
         if (apiResponse) {
             return apiResponse;
+        }
+
+        if (url.pathname.startsWith("/assets/")) {
+            const assetName = url.pathname.slice("/assets/".length);
+            const assetPath = path.join(assetsDir, assetName);
+            try {
+                const file = Bun.file(assetPath);
+                if (!(await file.exists())) {
+                    return new Response("Not found", { status: 404 });
+                }
+
+                return new Response(file.stream(), {
+                    headers: { "Content-Type": file.type ?? "application/octet-stream" }
+                });
+            } catch {
+                return new Response("Not found", { status: 404 });
+            }
+        }
+
+        if (url.pathname.startsWith("/styles/")) {
+            const stylePath = path.join(frontendDir, url.pathname.slice(1));
+            try {
+                const file = Bun.file(stylePath);
+                if (!(await file.exists())) {
+                    return new Response("Not found", { status: 404 });
+                }
+
+                return new Response(file.stream(), {
+                    headers: { "Content-Type": "text/css" }
+                });
+            } catch {
+                return new Response("Not found", { status: 404 });
+            }
         }
         
         if (url.pathname === "/index.tsx") {

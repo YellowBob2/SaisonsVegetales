@@ -1,7 +1,50 @@
 :root {
-  --catalog-bg: linear-gradient(160deg, #f3f8ef 0%, #f9f4ea 100%);
-  --card-top: #4f7a3f;
-  --card-top-soft: #9ac08f;
+  --brand-orange: #FFA43B;
+  --brand-orange-soft: #FFD58A;
+  --brand-green: #407153;
+  --brand-green-soft: #E4F0E1;
+  --brand-surface: #FFF7E3;
+  --brand-text: #2d4032;
+  --brand-muted: #5f6f64;
+  --brand-border: rgba(64, 113, 83, 0.12);
+  --catalog-bg: linear-gradient(160deg, #f9f3e3 0%, #fff7e7 100%);
+  --card-top: #FFA43B;
+  --card-top-soft: #FFD58A;
+}
+
+body {
+  background: linear-gradient(180deg, #fff7ec 0%, #fdf2d6 100%);
+  color: var(--brand-text);
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.brand-header {
+  background: rgba(64, 113, 83, 0.08);
+  border: 1px solid rgba(64, 113, 83, 0.16);
+  border-radius: 22px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 18px 40px rgba(64, 113, 83, 0.08);
+}
+
+.brand-logo {
+  width: 72px !important;
+  height: 72px !important;
+  max-width: 72px !important;
+  max-height: 72px !important;
+  object-fit: cover;
+  display: block;
+  border-radius: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 30px rgba(64, 113, 83, 0.12);
+  background: white;
+}
+
+.brand-heading {
+  color: var(--brand-green);
+  font-weight: 700;
 }
 
 .catalog-shell {
@@ -13,7 +56,7 @@
 .product-card {
   border: none;
   border-top: 5px solid var(--card-top);
-  background: linear-gradient(180deg, #ffffff 0%, #fbfcf8 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fff8ef 100%);
 }
 
 .product-card .card-title {
@@ -25,4 +68,57 @@
   gap: 0.5rem;
   align-items: center;
   justify-content: space-between;
+}
+
+.btn-primary {
+  background-color: var(--brand-orange) !important;
+  border-color: var(--brand-orange) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #ff9500 !important;
+  border-color: #ff9500 !important;
+}
+
+.nav-tabs .nav-link.active {
+  background: var(--brand-orange-soft);
+  color: var(--brand-green) !important;
+  border-color: var(--brand-orange) var(--brand-orange) transparent;
+}
+
+.nav-tabs .nav-link {
+  color: var(--brand-green);
+}
+
+.badge.bg-secondary {
+  background-color: var(--brand-green) !important;
+}
+
+.table {
+  border-color: var(--brand-border);
+}
+
+.form-control:focus {
+  border-color: var(--brand-orange);
+  box-shadow: 0 0 0 0.15rem rgba(255, 164, 59, 0.2);
+}
+
+.alert-danger {
+  background-color: #ffe6d0;
+  border-color: #ffd0b3;
+  color: #7e3b1b;
+}
+
+.alert-success {
+  background-color: #e9f4e6;
+  border-color: #d2ead4;
+  color: #2d5f44;
+}
+
+.alert-info {
+  background-color: #fff4da;
+  border-color: #ffe4a8;
+  color: #755a2b;
 }

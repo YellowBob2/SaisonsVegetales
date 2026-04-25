@@ -144,6 +144,10 @@ export default function App() {
     void refreshSessionAndPlats();
   }, [isLoaded, isSignedIn]);
 
+  useEffect(() => {
+    document.title = "Saisons Vegetales";
+  }, []);
+
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -306,10 +310,13 @@ export default function App() {
   }
 
   return (
-    <Container className="py-4 catalog-shell">
-      <Row className="mb-3 align-items-center">
+    <Container className="py-4 catalog-shell app-shell">
+      <Row className="mb-3 align-items-center brand-header">
+        <Col xs="auto">
+          <img src="/assets/logo.png" alt="Saisons Vegetales" className="brand-logo" />
+        </Col>
         <Col>
-          <h1>Saisons Vegetales</h1>
+          <h1 className="brand-heading">Saisons Vegetales</h1>
           <p className="text-muted mb-0">
             {!isLoaded 
               ? "Chargement..."
