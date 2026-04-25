@@ -11,7 +11,6 @@ import {
 import { permissionsByRole, roleLabels, type DemoRole } from "./auth/roles";
 import { PlatCatalogCards } from "./components/PlatCatalogCards";
 import { PlatCreateForm } from "./components/PlatCreateForm";
-import { showOrderSimulationPopup } from "./services/orderSimulation";
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from "@clerk/clerk-react";
 import "./styles/catalog.css";
 import { emptyPlatForm, type Plat, type PlatInput } from "./types";
@@ -24,6 +23,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [createForm, setCreateForm] = useState<PlatInput>(emptyPlatForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -243,11 +243,12 @@ export default function App() {
 
     setSaving(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const token = await getTokenOrThrow();
       const result = await orderPlatsApi(token, items);
-      showOrderSimulationPopup(result.message);
+      setSuccessMessage(result.message);
       setOrderQuantities({});
       await refreshSessionAndPlats();
     } catch (err) {
@@ -286,6 +287,14 @@ export default function App() {
         <Row className="mb-3">
           <Col>
             <Alert variant="danger" className="mb-0">{error}</Alert>
+          </Col>
+        </Row>
+      )}
+
+      {successMessage && (
+        <Row className="mb-3">
+          <Col>
+            <Alert variant="success" className="mb-0">{successMessage}</Alert>
           </Col>
         </Row>
       )}

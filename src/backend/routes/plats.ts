@@ -1,4 +1,4 @@
-import { hasAnyRole } from "../authentification";
+import { getAuthenticatedUser, hasAnyRole } from "../authentification";
 import { forbiddenResponse, jsonResponse } from "../http";
 import {
   createplat,
@@ -9,7 +9,7 @@ import {
   updateplat,
   updateplatStock
 } from "../plats.repository";
-import { simulateOrderEmailSend } from "../services/orderMailer";
+import { sendOrderConfirmationEmail } from "../services/orderMailer";
 
 async function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">): Promise<Response | null> {
   if (await hasAnyRole(req, roles)) {
@@ -183,12 +183,28 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
       return jsonResponse({ error: "items array with { platId, quantity } is required" }, 400);
     }
 
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return jsonResponse({ error: "Impossible de récupérer l'utilisateur authentifié." }, 401);
+    }
+
     const result = orderplats(effectiveItems);
-    simulateOrderEmailSend(result.orderedItems);
+    try {
+      await sendOrderConfirmationEmail({
+        userEmail: user.email,
+        userName: user.fullName,
+        orderedItems: result.orderedItems,
+        unavailableIds: result.unavailableIds,
+        notFoundIds: result.notFoundIds
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'email de confirmation :", error);
+      return jsonResponse({ error: "Impossible d'envoyer l'email de confirmation." }, 500);
+    }
 
     return jsonResponse({
       ...result,
-      message: "Simulation d'envoi de mail !"
+      message: "Email de confirmation envoyé." 
     });
   }
 
