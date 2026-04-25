@@ -115,7 +115,8 @@ export function PlatCatalogCards({
                         type="number"
                         min={0}
                         max={plat.stock}
-                        value={selectedQuantity}
+                        placeholder="0"
+                        value={selectedQuantity === 0 ? "" : selectedQuantity}
                         disabled={isUnavailable || saving || !canOrder}
                         onChange={(e) => onQuantityChange(plat.id, Number(e.target.value))}
                       />

@@ -32,6 +32,7 @@ export default function App() {
   const [ordersUpdatingId, setOrdersUpdatingId] = useState<number | null>(null);
   const [adminView, setAdminView] = useState<"products" | "orders">("products");
   const [selectedPlatIds, setSelectedPlatIds] = useState<number[]>([]);
+  const [route, setRoute] = useState<string>(window.location.pathname || "/");
 
   const [createForm, setCreateForm] = useState<PlatInput>(emptyPlatForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -56,6 +57,17 @@ export default function App() {
 
     return token;
   }
+
+  function navigate(path: string) {
+    window.history.pushState(null, "", path);
+    setRoute(path);
+  }
+
+  useEffect(() => {
+    const onPopState = () => setRoute(window.location.pathname || "/");
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
 
   function clampOrderQuantities(data: Plat[]) {
     setOrderQuantities((prev) => {
@@ -309,6 +321,289 @@ export default function App() {
     }
   }
 
+  const currentRoute = route === "/commande" || route === "/admin" ? route : "/";
+  const isAdmin = sessionRole === "admin";
+  const orderPageEnabled = permissions.canOrderPlats;
+
+  function renderHomePage() {
+    return (
+      <>
+        <Row className="mb-4">
+          <Col>
+            <Card className="shadow-sm">
+              <Card.Body>
+                <Card.Title>Bienvenue chez Saisons Vegetales</Card.Title>
+                <Card.Text>
+                  Je prépare des plats végétaux faits maison, inspirés par les saisons et le respect des ingrédients.
+                  Ce projet vise à proposer une cuisine saine, responsable et simple à commander en ligne.
+                </Card.Text>
+                <Card.Text>
+                  Sur cette plateforme vous pouvez découvrir les menus, commander en ligne et, si vous êtes administrateur,
+                  ajouter ou modifier les plats ainsi que consulter l'historique des commandes.
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        <Row className="gy-3">
+          <Col md={4}>
+            <Card className="shadow-sm border-0 bg-white">
+              <Card.Body>
+                <Card.Title>Qui fait les plats</Card.Title>
+                <Card.Text>
+                  Une personne passionnée de cuisine végétale qui souhaite partager des saveurs équilibrées, créatives et de saison.
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4}>
+            <Card className="shadow-sm border-0 bg-white">
+              <Card.Body>
+                <Card.Title>Le projet</Card.Title>
+                <Card.Text>
+                  Proposer une expérience simple pour commander des plats préparés et permettre à l'administrateur de gérer facilement le catalogue.
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={4}>
+            <Card className="shadow-sm border-0 bg-white">
+              <Card.Body>
+                <Card.Title>Comment ça marche</Card.Title>
+                <Card.Text>
+                  Parcourez les plats, connectez-vous, ajoutez vos quantités puis passez commande. Les commandes sont suivies et gérées par l'admin.
+                </Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </>
+    );
+  }
+
+  function renderOrderPage() {
+    if (!isLoaded) {
+      return (
+        <Row>
+          <Col className="text-center">
+            <Card className="shadow-sm">
+              <Card.Body>
+                <p className="text-muted">Chargement en cours...</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      );
+    }
+
+    if (!isSignedIn) {
+      return (
+        <Row>
+          <Col>
+            <Card className="shadow-sm">
+              <Card.Body>
+                <Card.Title>Connexion requise</Card.Title>
+                <Card.Text>
+                  Vous devez être connecté pour passer commande. Connectez-vous et revenez sur cette page.
+                </Card.Text>
+                <SignInButton>
+                  <Button variant="primary">Se connecter</Button>
+                </SignInButton>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      );
+    }
+
+    if (!orderPageEnabled) {
+      return (
+        <Row>
+          <Col>
+            <Alert variant="info">Vous n'avez pas les droits pour passer commande depuis cette session.</Alert>
+          </Col>
+        </Row>
+      );
+    }
+
+    return (
+      <>
+        <Row className="mb-4">
+          <Col>
+            <h2 className="h5">Passer commande</h2>
+            <p className="text-muted">
+              Choisissez vos plats, ajustez les quantités et confirmez votre commande.
+            </p>
+          </Col>
+        </Row>
+
+        <Row>
+          <Col>
+            <div className="catalog-actions mb-3 d-flex align-items-center justify-content-between gap-3">
+              <h2 className="h5 mb-0">Plats disponibles</h2>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={saving || loading || orderedTotal === 0}
+                onClick={() => void handleOrder()}
+              >
+                Commander ({orderedTotal})
+              </Button>
+            </div>
+            {loading ? (
+              <Card className="shadow-sm">
+                <Card.Body className="text-center">
+                  <p className="text-muted">Chargement des plats...</p>
+                </Card.Body>
+              </Card>
+            ) : (
+              <PlatCatalogCards
+                plats={plats}
+                loading={false}
+                saving={saving}
+                editingId={editingId}
+                editForm={editForm}
+                orderQuantities={orderQuantities}
+                canOrder={permissions.canOrderPlats}
+                canEdit={permissions.canEditPlat}
+                canDelete={permissions.canDeletePlat}
+                onEditFormChange={setEditForm}
+                onStartEdit={startEdit}
+                onCancelEdit={cancelEdit}
+                onSaveEdit={(id) => void saveEdit(id)}
+                onDelete={(id) => void handleDelete(id)}
+                onQuantityChange={changeOrderQuantity}
+              />
+            )}
+          </Col>
+        </Row>
+      </>
+    );
+  }
+
+  function renderAdminPage() {
+    if (!isLoaded) {
+      return (
+        <Row>
+          <Col className="text-center">
+            <Card className="shadow-sm">
+              <Card.Body>
+                <p className="text-muted">Chargement en cours...</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      );
+    }
+
+    if (!isSignedIn) {
+      return (
+        <Row>
+          <Col>
+            <Card className="shadow-sm">
+              <Card.Body>
+                <Card.Title>Connexion requise</Card.Title>
+                <Card.Text>
+                  Connectez-vous pour accéder à l'espace d'administration.
+                </Card.Text>
+                <SignInButton>
+                  <Button variant="primary">Se connecter</Button>
+                </SignInButton>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      );
+    }
+
+    if (!isAdmin) {
+      return (
+        <Row>
+          <Col>
+            <Alert variant="danger">Accès refusé. Cette page est réservée aux administrateurs.</Alert>
+          </Col>
+        </Row>
+      );
+    }
+
+    return (
+      <>
+        {permissions.canCreatePlat && (
+          <Row className="mb-4">
+            <Col>
+              <h2 className="h5">Ajouter un plat</h2>
+              <PlatCreateForm
+                value={createForm}
+                disabled={saving || loading}
+                onSubmit={handleCreate}
+                onChange={setCreateForm}
+              />
+            </Col>
+          </Row>
+        )}
+
+        <Row className="mb-4">
+          <Col>
+            <Card className="shadow-sm">
+              <Card.Body>
+                <Card.Title>Administration</Card.Title>
+                <Nav variant="tabs" activeKey={adminView} onSelect={(value) => value && setAdminView(value as "products" | "orders")}> 
+                  <Nav.Item>
+                    <Nav.Link eventKey="products">Produits</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="orders">Commandes</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+
+        {adminView === "products" && (
+          <Row className="mb-4">
+            <Col>
+              <h2 className="h5">Gestion des plats</h2>
+              <PlatTable
+                plats={plats}
+                selectedIds={selectedPlatIds}
+                onToggleSelection={(id, checked) => {
+                  setSelectedPlatIds((current) =>
+                    checked ? [...current, id] : current.filter((item) => item !== id)
+                  );
+                }}
+                loading={loading}
+                saving={saving}
+                editingId={editingId}
+                editForm={editForm}
+                onEditFormChange={setEditForm}
+                onStartEdit={startEdit}
+                onCancelEdit={cancelEdit}
+                onSaveEdit={(id) => void saveEdit(id)}
+                onDelete={(id) => void handleDelete(id)}
+              />
+            </Col>
+          </Row>
+        )}
+
+        {adminView === "orders" && (
+          <Row className="mb-4">
+            <Col>
+              <h2 className="h5">Historique des commandes</h2>
+              <AdminOrdersPanel
+                orders={orders}
+                loading={ordersLoading}
+                updatingOrderId={ordersUpdatingId}
+                onChangeStatus={handleUpdateOrderStatus}
+              />
+            </Col>
+          </Row>
+        )}
+      </>
+    );
+  }
+
   return (
     <Container className="py-4 catalog-shell app-shell">
       <Row className="mb-3 align-items-center brand-header">
@@ -337,6 +632,24 @@ export default function App() {
         </Col>
       </Row>
 
+      <Row className="mb-4">
+        <Col>
+          <Nav variant="pills" className="mb-3">
+            <Nav.Item>
+              <Nav.Link active={currentRoute === "/"} onClick={() => navigate("/")}>Accueil</Nav.Link>
+            </Nav.Item>
+            <Nav.Item>
+              <Nav.Link active={currentRoute === "/commande"} onClick={() => navigate("/commande")}>Commander</Nav.Link>
+            </Nav.Item>
+            {isAdmin && (
+              <Nav.Item>
+                <Nav.Link active={currentRoute === "/admin"} onClick={() => navigate("/admin")}>Admin</Nav.Link>
+              </Nav.Item>
+            )}
+          </Nav>
+        </Col>
+      </Row>
+
       {error && (
         <Row className="mb-3">
           <Col>
@@ -353,174 +666,9 @@ export default function App() {
         </Row>
       )}
 
-      {!isLoaded && (
-        <Row>
-          <Col className="text-center">
-            <Card className="shadow-sm">
-              <Card.Body>
-                <p className="text-muted">Initialisation en cours...</p>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      <SignedOut>
-        {isLoaded && (
-          <Row>
-            <Col>
-              <Card className="shadow-sm">
-                <Card.Body>
-                  <Card.Title>Connexion requise</Card.Title>
-                  <Card.Text className="text-muted mb-3">
-                    Connectez-vous pour consulter les plats et passer commande.
-                  </Card.Text>
-                  <SignInButton>
-                    <Button>Se connecter</Button>
-                  </SignInButton>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        )}
-      </SignedOut>
-
-      <SignedIn>
-        {isLoaded && loading && sessionRole === "guest" && (
-          <Row>
-            <Col className="text-center">
-              <Card className="shadow-sm">
-                <Card.Body>
-                  <p className="text-muted">Récupération de votre rôle...</p>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        )}
-
-        {isLoaded && sessionRole !== "guest" && (
-          <>
-            {sessionRole === "admin" && (
-              <Row className="mb-4">
-                <Col>
-                  <Card className="shadow-sm">
-                    <Card.Body>
-                      <Card.Title>Administration</Card.Title>
-                      <Nav variant="tabs" activeKey={adminView} onSelect={(value) => value && setAdminView(value as "products" | "orders")}> 
-                        <Nav.Item>
-                          <Nav.Link eventKey="products">Produits</Nav.Link>
-                        </Nav.Item>
-                        <Nav.Item>
-                          <Nav.Link eventKey="orders">Commandes</Nav.Link>
-                        </Nav.Item>
-                      </Nav>
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
-            )}
-
-            {sessionRole === "admin" && adminView === "products" && (
-              <>
-                {permissions.canCreatePlat && (
-                  <Row className="mb-4">
-                    <Col>
-                      <h2 className="h5">Ajouter un plat</h2>
-                      <PlatCreateForm
-                        value={createForm}
-                        disabled={saving || loading}
-                        onSubmit={handleCreate}
-                        onChange={setCreateForm}
-                      />
-                    </Col>
-                  </Row>
-                )}
-
-                <Row className="mb-4">
-                  <Col>
-                    <h2 className="h5">Gestion des plats</h2>
-                    <PlatTable
-                      plats={plats}
-                      selectedIds={selectedPlatIds}
-                      onToggleSelection={(id, checked) => {
-                        setSelectedPlatIds((current) =>
-                          checked ? [...current, id] : current.filter((item) => item !== id)
-                        );
-                      }}
-                      loading={loading}
-                      saving={saving}
-                      editingId={editingId}
-                      editForm={editForm}
-                      onEditFormChange={setEditForm}
-                      onStartEdit={startEdit}
-                      onCancelEdit={cancelEdit}
-                      onSaveEdit={(id) => void saveEdit(id)}
-                      onDelete={(id) => void handleDelete(id)}
-                    />
-                  </Col>
-                </Row>
-              </>
-            )}
-
-            {sessionRole === "admin" && adminView === "orders" && (
-              <Row className="mb-4">
-                <Col>
-                  <h2 className="h5">Vue des commandes</h2>
-                  <AdminOrdersPanel
-                    orders={orders}
-                    loading={ordersLoading}
-                    updatingOrderId={ordersUpdatingId}
-                    onChangeStatus={handleUpdateOrderStatus}
-                  />
-                </Col>
-              </Row>
-            )}
-
-            <Row>
-              <Col>
-                <div className="catalog-actions mb-3 d-flex align-items-center justify-content-between gap-3">
-                  <h2 className="h5 mb-0">Plats disponibles</h2>
-                  {permissions.canOrderPlats && (
-                    <Button
-                      type="button"
-                      variant="primary"
-                      disabled={saving || loading || orderedTotal === 0}
-                      onClick={() => void handleOrder()}
-                    >
-                      Commander ({orderedTotal})
-                    </Button>
-                  )}
-                </div>
-                {loading ? (
-                  <Card className="shadow-sm">
-                    <Card.Body className="text-center">
-                      <p className="text-muted">Chargement des plats...</p>
-                    </Card.Body>
-                  </Card>
-                ) : (
-                  <PlatCatalogCards
-                    plats={plats}
-                    loading={false}
-                    saving={saving}
-                    editingId={editingId}
-                    editForm={editForm}
-                    orderQuantities={orderQuantities}
-                    canOrder={permissions.canOrderPlats}
-                    canEdit={permissions.canEditPlat}
-                    canDelete={permissions.canDeletePlat}
-                    onEditFormChange={setEditForm}
-                    onStartEdit={startEdit}
-                    onCancelEdit={cancelEdit}
-                    onSaveEdit={(id) => void saveEdit(id)}
-                    onDelete={(id) => void handleDelete(id)}
-                    onQuantityChange={changeOrderQuantity}
-                  />
-                )}
-              </Col>
-            </Row>
-          </>
-        )}
-      </SignedIn>
+      {currentRoute === "/" && renderHomePage()}
+      {currentRoute === "/commande" && renderOrderPage()}
+      {currentRoute === "/admin" && renderAdminPage()}
     </Container>
   );
 }

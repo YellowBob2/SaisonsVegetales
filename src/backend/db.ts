@@ -74,7 +74,14 @@ db.run(`
   )
 `);
 
-db.run(`
-  DELETE FROM orders
-  WHERE datetime(created_at) <= datetime('now', '-21 days')
-`);
+export function cleanupOldOrders() {
+  db.run(`
+    DELETE FROM orders
+    WHERE datetime(created_at) <= datetime('now', '-21 days')
+  `);
+}
+
+cleanupOldOrders();
+
+const ONE_WEEK_MS = 1000 * 60 * 60 * 24 * 7;
+setInterval(cleanupOldOrders, ONE_WEEK_MS);
