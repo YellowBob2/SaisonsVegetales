@@ -126,6 +126,7 @@ export type OrderedPlatItem = {
   platId: number;
   name: string;
   orderedQuantity: number;
+  price: number;
   remainingStock: number;
 };
 
@@ -173,6 +174,7 @@ export function orderplats(items: PlatOrderRequestItem[]): {
           platId: id,
           name: updated.name,
           orderedQuantity: orderQuantity,
+          price: updated.price,
           remainingStock: updated.stock
         });
       }

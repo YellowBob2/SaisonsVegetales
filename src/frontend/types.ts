@@ -21,6 +21,25 @@ export type PlatPayload = {
   stock: number;
 };
 
+export type OrderStatus = "pending" | "processing" | "confirmed" | "canceled";
+
+export type OrderItem = {
+  platId: number;
+  name: string;
+  quantity: number;
+  price: number;
+};
+
+export type Order = {
+  id: number;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  status: OrderStatus;
+  created_at: string;
+  items: OrderItem[];
+};
+
 export const emptyPlatForm: PlatInput = {
   name: "",
   available_until: "",

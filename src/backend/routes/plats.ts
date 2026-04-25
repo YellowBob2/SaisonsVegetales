@@ -9,7 +9,12 @@ import {
   updateplat,
   updateplatStock
 } from "../plats.repository";
+import { createOrder, getOrders, updateOrderStatus } from "../orders.repository";
 import { sendOrderConfirmationEmail } from "../services/orderMailer";
+
+const VALID_ORDER_STATUSES = ["pending", "processing", "confirmed", "canceled"] as const;
+
+type OrderStatus = (typeof VALID_ORDER_STATUSES)[number];
 
 async function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">): Promise<Response | null> {
   if (await hasAnyRole(req, roles)) {
@@ -148,6 +153,37 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
     return jsonResponse(seedExampleplats());
   }
 
+  if (url.pathname === "/api/orders" && req.method === "GET") {
+    const denied = await requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
+    return jsonResponse({ orders: getOrders() });
+  }
+
+  if (url.pathname === "/api/orders" && req.method === "PATCH") {
+    const denied = await requireAnyRole(req, ["admin"]);
+    if (denied) {
+      return denied;
+    }
+
+    const id = Number(url.searchParams.get("id"));
+    const body = await req.json().catch(() => null);
+    const status = body?.status;
+
+    if (!Number.isInteger(id) || typeof status !== "string" || !VALID_ORDER_STATUSES.includes(status as OrderStatus)) {
+      return jsonResponse({ error: "id query param and valid status are required" }, 400);
+    }
+
+    const updated = updateOrderStatus(id, status as OrderStatus);
+    if (!updated) {
+      return jsonResponse({ error: "Order not found" }, 404);
+    }
+
+    return jsonResponse({ success: true });
+  }
+
   if (url.pathname === "/api/plats/order" && req.method === "POST") {
     const denied = await requireAnyRole(req, ["user", "admin"]);
     if (denied) {
@@ -189,6 +225,19 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
     }
 
     const result = orderplats(effectiveItems);
+    const createdOrder = createOrder({
+      userId: user.userId,
+      userEmail: user.email,
+      userName: user.fullName,
+      status: "pending",
+      items: result.orderedItems.map((item) => ({
+        platId: item.platId,
+        name: item.name,
+        quantity: item.orderedQuantity,
+        price: item.price
+      }))
+    });
+
     try {
       await sendOrderConfirmationEmail({
         userEmail: user.email,
@@ -203,8 +252,9 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
     }
 
     return jsonResponse({
+      orderId: createdOrder.id,
       ...result,
-      message: "Email de confirmation envoyé." 
+      message: "Email de confirmation envoyé."
     });
   }
 

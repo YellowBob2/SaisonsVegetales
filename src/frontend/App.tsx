@@ -8,12 +8,14 @@ import {
   orderPlatsApi,
   updatePlatApi
 } from "./api/platsApi";
+import { fetchOrdersApi, updateOrderStatusApi } from "./api/ordersApi";
 import { permissionsByRole, roleLabels, type DemoRole } from "./auth/roles";
 import { PlatCatalogCards } from "./components/PlatCatalogCards";
 import { PlatCreateForm } from "./components/PlatCreateForm";
+import { AdminOrdersPanel } from "./components/AdminOrdersPanel";
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from "@clerk/clerk-react";
 import "./styles/catalog.css";
-import { emptyPlatForm, type Plat, type PlatInput } from "./types";
+import { emptyPlatForm, type Order, type OrderStatus, type Plat, type PlatInput } from "./types";
 import { toPlatPayload } from "./utils/platsForm";
 
 export default function App() {
@@ -24,6 +26,9 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersUpdatingId, setOrdersUpdatingId] = useState<number | null>(null);
 
   const [createForm, setCreateForm] = useState<PlatInput>(emptyPlatForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -64,6 +69,36 @@ export default function App() {
     });
   }
 
+  async function loadOrders(token: string) {
+    setOrdersLoading(true);
+    try {
+      const data = await fetchOrdersApi(token);
+      setOrders(data.orders);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue.");
+      setOrders([]);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }
+
+  async function handleUpdateOrderStatus(orderId: number, status: OrderStatus) {
+    setError(null);
+    setSuccessMessage(null);
+    setOrdersUpdatingId(orderId);
+
+    try {
+      const token = await getTokenOrThrow();
+      await updateOrderStatusApi(token, orderId, status);
+      setSuccessMessage("Statut de commande mis à jour.");
+      await loadOrders(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue.");
+    } finally {
+      setOrdersUpdatingId(null);
+    }
+  }
+
   async function refreshSessionAndPlats() {
     if (!isLoaded) {
       return;
@@ -87,9 +122,16 @@ export default function App() {
       const data = await fetchPlatsApi(token);
       setPlats(data);
       clampOrderQuantities(data);
+
+      if (session.role === "admin") {
+        await loadOrders(token);
+      } else {
+        setOrders([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur inconnue.");
       setPlats([]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -355,6 +397,20 @@ export default function App() {
                     disabled={saving || loading}
                     onSubmit={handleCreate}
                     onChange={setCreateForm}
+                  />
+                </Col>
+              </Row>
+            )}
+
+            {sessionRole === "admin" && (
+              <Row className="mb-4">
+                <Col>
+                  <h2 className="h5">Gestion des commandes</h2>
+                  <AdminOrdersPanel
+                    orders={orders}
+                    loading={ordersLoading}
+                    updatingOrderId={ordersUpdatingId}
+                    onChangeStatus={handleUpdateOrderStatus}
                   />
                 </Col>
               </Row>
