@@ -6,19 +6,54 @@ export type plat = {
   available_until: string;
   price: number;
   stock: number;
+  description: string;
+  allergenes: string[];
   created_at: string;
 };
 
+function parseAllergenes(value: string | null | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) => String(item).trim()).filter(Boolean);
+    }
+  } catch {
+    // fall back to comma-separated list
+  }
+
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function mapRowToPlat(row: any): plat {
+  return {
+    id: Number(row.id),
+    name: String(row.name),
+    available_until: String(row.available_until),
+    price: Number(row.price),
+    stock: Number(row.stock),
+    description: String(row.description ?? ""),
+    allergenes: parseAllergenes(row.allergenes),
+    created_at: String(row.created_at)
+  };
+}
+
 const insertplatStmt = db.prepare(
-  "INSERT INTO plats (name, available_until, price, stock) VALUES (?, ?, ?, ?)"
+  "INSERT INTO plats (name, available_until, price, stock, description, allergenes) VALUES (?, ?, ?, ?, ?, ?)"
 );
 
 const getAllplatsStmt = db.prepare(
-  "SELECT id, name, available_until, price, stock, created_at FROM plats ORDER BY id DESC"
+  "SELECT id, name, available_until, price, stock, description, allergenes, created_at FROM plats ORDER BY id DESC"
 );
 
 const getplatByIdStmt = db.prepare(
-  "SELECT id, name, available_until, price, stock, created_at FROM plats WHERE id = ?"
+  "SELECT id, name, available_until, price, stock, description, allergenes, created_at FROM plats WHERE id = ?"
 );
 
 const updateplatStockStmt = db.prepare(
@@ -26,7 +61,7 @@ const updateplatStockStmt = db.prepare(
 );
 
 const updateplatStmt = db.prepare(
-  "UPDATE plats SET name = ?, available_until = ?, price = ?, stock = ? WHERE id = ?"
+  "UPDATE plats SET name = ?, available_until = ?, price = ?, stock = ?, description = ?, allergenes = ? WHERE id = ?"
 );
 
 const decrementplatStockByQtyStmt = db.prepare(
@@ -42,17 +77,20 @@ export function createplat(input: {
   available_until: string;
   price: number;
   stock: number;
+  description: string;
+  allergenes: string[];
 }): plat {
   const result = insertplatStmt.run(
     input.name,
     input.available_until,
     input.price,
-    input.stock
+    input.stock,
+    input.description,
+    JSON.stringify(input.allergenes)
   );
 
-  const created = getplatByIdStmt.get(Number(result.lastInsertRowid)) as
-    | plat
-    | undefined;
+  const createdRow = getplatByIdStmt.get(Number(result.lastInsertRowid)) as any;
+  const created = createdRow ? mapRowToPlat(createdRow) : undefined;
 
   if (!created) {
     throw new Error("Failed to create plat");
@@ -62,29 +100,38 @@ export function createplat(input: {
 }
 
 export function getAllplats(): plat[] {
-  return getAllplatsStmt.all() as plat[];
+  return (getAllplatsStmt.all() as any[]).map(mapRowToPlat);
 }
 
 export function updateplatStock(id: number, newStock: number): plat | null {
   updateplatStockStmt.run(newStock, id);
-  const updated = getplatByIdStmt.get(id) as plat | undefined;
-  return updated ?? null;
+  const updatedRow = getplatByIdStmt.get(id) as any;
+  return updatedRow ? mapRowToPlat(updatedRow) : null;
 }
 
 export function updateplat(
   id: number,
-  input: { name: string; available_until: string; price: number; stock: number }
+  input: {
+    name: string;
+    available_until: string;
+    price: number;
+    stock: number;
+    description: string;
+    allergenes: string[];
+  }
 ): plat | null {
   updateplatStmt.run(
     input.name,
     input.available_until,
     input.price,
     input.stock,
+    input.description,
+    JSON.stringify(input.allergenes),
     id
   );
 
-  const updated = getplatByIdStmt.get(id) as plat | undefined;
-  return updated ?? null;
+  const updatedRow = getplatByIdStmt.get(id) as any;
+  return updatedRow ? mapRowToPlat(updatedRow) : null;
 }
 
 export function deleteplat(id: number): boolean {
@@ -100,14 +147,42 @@ export function seedExampleplats(): { inserted: number; total: number } {
   }
 
   const examples = [
-    { name: "Tomate Ancienne", available_until: "10/04/2026", price: 4.5, stock: 12 },
-    { name: "Courge Butternut", available_until: "10/04/2026", price: 3.9, stock: 8 },
-    { name: "Poireau Bleu", available_until: "10/04/2026", price: 2.7, stock: 15 }
+    {
+      name: "Tomate Ancienne",
+      available_until: "2026-04-10",
+      price: 4.5,
+      stock: 12,
+      description: "Tomate ancienne pleine de saveur.",
+      allergenes: ["aucun"]
+    },
+    {
+      name: "Courge Butternut",
+      available_until: "2026-04-10",
+      price: 3.9,
+      stock: 8,
+      description: "Courge douce et onctueuse.",
+      allergenes: ["aucun"]
+    },
+    {
+      name: "Poireau Bleu",
+      available_until: "2026-04-10",
+      price: 2.7,
+      stock: 15,
+      description: "Poireau frais pour soupes et quiches.",
+      allergenes: ["aucun"]
+    }
   ];
 
   const tx = db.transaction((plats: typeof examples) => {
     for (const plat of plats) {
-      insertplatStmt.run(plat.name, plat.available_until, plat.price, plat.stock);
+      insertplatStmt.run(
+        plat.name,
+        plat.available_until,
+        plat.price,
+        plat.stock,
+        plat.description,
+        JSON.stringify(plat.allergenes)
+      );
     }
   });
 

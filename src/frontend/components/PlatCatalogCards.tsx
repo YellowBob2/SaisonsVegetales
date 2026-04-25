@@ -73,6 +73,8 @@ export function PlatCatalogCards({
                   Disponible jusqu'au: {plat.available_until}
                 </Card.Text>
                 <Card.Text className="mb-2 fw-semibold">{plat.price.toFixed(2)} EUR</Card.Text>
+                <Card.Text className="mb-2">{plat.description || "Sans description."}</Card.Text>
+                <Card.Text className="mb-2">Allergènes: {plat.allergenes.length > 0 ? plat.allergenes.join(", ") : "Aucun"}</Card.Text>
                 <Card.Text className="mb-3">Stock: {plat.stock}</Card.Text>
 
                 {isEditing ? (

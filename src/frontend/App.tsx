@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, Card, Col, Container, Row } from "react-bootstrap";
+import { Alert, Badge, Button, Card, Col, Container, Nav, Row } from "react-bootstrap";
 import {
   createPlatApi,
   deletePlatApi,
@@ -12,6 +12,7 @@ import { fetchOrdersApi, updateOrderStatusApi } from "./api/ordersApi";
 import { permissionsByRole, roleLabels, type DemoRole } from "./auth/roles";
 import { PlatCatalogCards } from "./components/PlatCatalogCards";
 import { PlatCreateForm } from "./components/PlatCreateForm";
+import { PlatTable } from "./components/PlatTable";
 import { AdminOrdersPanel } from "./components/AdminOrdersPanel";
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from "@clerk/clerk-react";
 import "./styles/catalog.css";
@@ -29,6 +30,8 @@ export default function App() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersUpdatingId, setOrdersUpdatingId] = useState<number | null>(null);
+  const [adminView, setAdminView] = useState<"products" | "orders">("products");
+  const [selectedPlatIds, setSelectedPlatIds] = useState<number[]>([]);
 
   const [createForm, setCreateForm] = useState<PlatInput>(emptyPlatForm);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -181,7 +184,9 @@ export default function App() {
       name: plat.name,
       available_until: plat.available_until,
       price: String(plat.price),
-      stock: String(plat.stock)
+      stock: String(plat.stock),
+      description: plat.description || "",
+      allergenes: plat.allergenes.join(", ")
     });
   }
 
@@ -388,24 +393,72 @@ export default function App() {
 
         {isLoaded && sessionRole !== "guest" && (
           <>
-            {permissions.canCreatePlat && (
+            {sessionRole === "admin" && (
               <Row className="mb-4">
                 <Col>
-                  <h2 className="h5">Ajouter un plat</h2>
-                  <PlatCreateForm
-                    value={createForm}
-                    disabled={saving || loading}
-                    onSubmit={handleCreate}
-                    onChange={setCreateForm}
-                  />
+                  <Card className="shadow-sm">
+                    <Card.Body>
+                      <Card.Title>Administration</Card.Title>
+                      <Nav variant="tabs" activeKey={adminView} onSelect={(value) => value && setAdminView(value as "products" | "orders")}> 
+                        <Nav.Item>
+                          <Nav.Link eventKey="products">Produits</Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
+                          <Nav.Link eventKey="orders">Commandes</Nav.Link>
+                        </Nav.Item>
+                      </Nav>
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
             )}
 
-            {sessionRole === "admin" && (
+            {sessionRole === "admin" && adminView === "products" && (
+              <>
+                {permissions.canCreatePlat && (
+                  <Row className="mb-4">
+                    <Col>
+                      <h2 className="h5">Ajouter un plat</h2>
+                      <PlatCreateForm
+                        value={createForm}
+                        disabled={saving || loading}
+                        onSubmit={handleCreate}
+                        onChange={setCreateForm}
+                      />
+                    </Col>
+                  </Row>
+                )}
+
+                <Row className="mb-4">
+                  <Col>
+                    <h2 className="h5">Gestion des plats</h2>
+                    <PlatTable
+                      plats={plats}
+                      selectedIds={selectedPlatIds}
+                      onToggleSelection={(id, checked) => {
+                        setSelectedPlatIds((current) =>
+                          checked ? [...current, id] : current.filter((item) => item !== id)
+                        );
+                      }}
+                      loading={loading}
+                      saving={saving}
+                      editingId={editingId}
+                      editForm={editForm}
+                      onEditFormChange={setEditForm}
+                      onStartEdit={startEdit}
+                      onCancelEdit={cancelEdit}
+                      onSaveEdit={(id) => void saveEdit(id)}
+                      onDelete={(id) => void handleDelete(id)}
+                    />
+                  </Col>
+                </Row>
+              </>
+            )}
+
+            {sessionRole === "admin" && adminView === "orders" && (
               <Row className="mb-4">
                 <Col>
-                  <h2 className="h5">Gestion des commandes</h2>
+                  <h2 className="h5">Vue des commandes</h2>
                   <AdminOrdersPanel
                     orders={orders}
                     loading={ordersLoading}

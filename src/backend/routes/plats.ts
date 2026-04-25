@@ -16,6 +16,30 @@ const VALID_ORDER_STATUSES = ["pending", "processing", "confirmed", "canceled"] 
 
 type OrderStatus = (typeof VALID_ORDER_STATUSES)[number];
 
+function isValidDate(value: unknown): value is string {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime());
+}
+
+function normalizeAllergenes(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 async function requireAnyRole(req: Request, roles: Array<"guest" | "user" | "admin">): Promise<Response | null> {
   if (await hasAnyRole(req, roles)) {
     return null;
@@ -46,21 +70,36 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
       return jsonResponse({ error: "JSON body is required" }, 400);
     }
 
-    const { name, available_until, price, stock } = body as {
+    const { name, available_until, price, stock, description, allergenes } = body as {
       name?: string;
-      available_until?: string;
+      available_until?: unknown;
       price?: number;
       stock?: number;
+      description?: string;
+      allergenes?: unknown;
     };
 
-    if (!name || !available_until || typeof price !== "number" || typeof stock !== "number") {
+    if (
+      !name ||
+      !isValidDate(available_until) ||
+      typeof price !== "number" ||
+      typeof stock !== "number" ||
+      typeof description !== "string"
+    ) {
       return jsonResponse(
-        { error: "name, available_until, price (number), stock (number) are required" },
+        { error: "name, available_until (valid date), price (number), stock (number), description are required" },
         400
       );
     }
 
-    const created = createplat({ name, available_until, price, stock });
+    const created = createplat({
+      name,
+      available_until: new Date(available_until).toISOString().slice(0, 10),
+      price,
+      stock,
+      description: description.trim(),
+      allergenes: normalizeAllergenes(allergenes)
+    });
     return jsonResponse({ plat: created }, 201);
   }
 
@@ -100,21 +139,36 @@ export async function handlePlatsRoutes(req: Request, url: URL): Promise<Respons
       return jsonResponse({ error: "id query param and JSON body are required" }, 400);
     }
 
-    const { name, available_until, price, stock } = body as {
+    const { name, available_until, price, stock, description, allergenes } = body as {
       name?: string;
-      available_until?: string;
+      available_until?: unknown;
       price?: number;
       stock?: number;
+      description?: string;
+      allergenes?: unknown;
     };
 
-    if (!name || !available_until || typeof price !== "number" || typeof stock !== "number") {
+    if (
+      !name ||
+      !isValidDate(available_until) ||
+      typeof price !== "number" ||
+      typeof stock !== "number" ||
+      typeof description !== "string"
+    ) {
       return jsonResponse(
-        { error: "name, available_until, price (number), stock (number) are required" },
+        { error: "name, available_until (valid date), price (number), stock (number), description are required" },
         400
       );
     }
 
-    const updated = updateplat(id, { name, available_until, price, stock });
+    const updated = updateplat(id, {
+      name,
+      available_until: new Date(available_until).toISOString().slice(0, 10),
+      price,
+      stock,
+      description: description.trim(),
+      allergenes: normalizeAllergenes(allergenes)
+    });
 
     if (!updated) {
       return jsonResponse({ error: "plat not found" }, 404);
