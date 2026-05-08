@@ -1,8 +1,15 @@
 import { mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { Database } from "bun:sqlite";
 
-const dbFile = join(import.meta.dir, process.env.DATABASE_URL ?? "../../data/saisons.db");
+const databaseUrl = process.env.DATABASE_URL ?? "../../data/saisons.db";
+// Resolve paths relative to the project root (/app on Railway, current dir locally)
+const projectRoot = resolve(import.meta.dir, "../../");
+const dbFile = databaseUrl.startsWith("/") 
+  ? databaseUrl 
+  : join(projectRoot, databaseUrl);
+
+console.log("Project root:", projectRoot);
 console.log("DB file path:", dbFile);
 try {
   mkdirSync(dirname(dbFile), { recursive: true });
