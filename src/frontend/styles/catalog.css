@@ -92,6 +92,24 @@ body {
   color: var(--brand-green);
 }
 
+.nav-pills .nav-link {
+  color: var(--brand-green);
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  padding: 0.65rem 1.2rem;
+}
+
+.nav-pills .nav-link:hover:not(.active) {
+  background-color: var(--brand-orange-soft);
+  color: var(--brand-green);
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--brand-orange);
+  color: #ffffff;
+}
+
 .badge.bg-secondary {
   background-color: var(--brand-green) !important;
 }

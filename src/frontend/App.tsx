@@ -328,54 +328,105 @@ export default function App() {
   function renderHomePage() {
     return (
       <>
-        <Row className="mb-4">
-          <Col>
-            <Card className="shadow-sm">
+        <Row className="mb-5">
+          <Col className="text-center">
+            <div className="py-4 px-3">
+              <h2 style={{ color: "var(--brand-green)", fontSize: "2.5rem", fontWeight: "700", marginBottom: "0.5rem" }}>
+                Bonjour cher.e.s gourmand.e.s,
+              </h2>
+              <p style={{ color: "var(--brand-orange)", fontSize: "1.25rem", fontWeight: "500", marginBottom: "0" }}>
+                Bienvenue sur le site de commande des Saisons Végétales.
+              </p>
+            </div>
+          </Col>
+        </Row>
+
+        <Row className="mb-4 justify-content-start">
+          <Col md={7}>
+            <Card className="shadow-sm product-card">
               <Card.Body>
-                <Card.Title>Bienvenue chez Saisons Vegetales</Card.Title>
-                <Card.Text>
-                  Je prépare des plats végétaux faits maison, inspirés par les saisons et le respect des ingrédients.
-                  Ce projet vise à proposer une cuisine saine, responsable et simple à commander en ligne.
-                </Card.Text>
-                <Card.Text>
-                  Sur cette plateforme vous pouvez découvrir les menus, commander en ligne et, si vous êtes administrateur,
-                  ajouter ou modifier les plats ainsi que consulter l'historique des commandes.
+                <Card.Title style={{ color: "var(--brand-green)" }}>Qu'est ce que c'est ?</Card.Title>
+                <Card.Text className="text-start" style={{ color: "var(--brand-text)" }}>
+                  Le principe est simple: mieux manger, moins cher, et sans cuisiner en semaine. Je suis une jeune 
+                  entrepreneuse, passionnée de cuisine et de nutrition. J'ai commencé par préparer des repas 
+                  bénévolement pour la semaine pour des familles dont un enfant était porteur de handicap. Voyant 
+                  l'aide que ce geste leur proposait, j'ai eu l'idée de l'étendre à un plus large public, afin 
+                  d'en faire une activité auxiliaire. Travaillant à plein temps, et veillant également à respecter 
+                  un équilibre personnel et familial, je ne propose pour l'instant qu'un jour de retrait des repas: 
+                  le mardi soir. Du fait des normes d'hygiène, je ne peux pas vous vendre des plats pour toute la 
+                  semaine car ils se conservent 3 jours au réfrigérateur. Par contre je peux vous préparer tous les repas 
+                  du mercredi, jeudi et vendredi et vous coacher sur la préparation de la suite le week end, avec des 
+                  recettes faciles et réalisables en famille. (À terme, il est possible que je prépare également des 
+                  repas le samedi, mais pour l'instant, le projet est naissant, je loue une cuisine et ne peux pas 
+                  avoir plusieurs créneaux.)
                 </Card.Text>
               </Card.Body>
             </Card>
           </Col>
         </Row>
 
-        <Row className="gy-3">
-          <Col md={4}>
-            <Card className="shadow-sm border-0 bg-white">
+        <Row className="mb-4 justify-content-end">
+          <Col md={7}>
+            <Card className="shadow-sm product-card">
               <Card.Body>
-                <Card.Title>Qui fait les plats</Card.Title>
-                <Card.Text>
-                  Une personne passionnée de cuisine végétale qui souhaite partager des saveurs équilibrées, créatives et de saison.
+                <Card.Title style={{ color: "var(--brand-green)" }}>Qu'est ce qu'on mange ?</Card.Title>
+                <Card.Text className="text-start" style={{ color: "var(--brand-text)" }}>
+                  Je cuisine principalement des produits végétaux de saison: peu de viande dans mes plats donc. 
+                  Cependant, ils seront équilibrés, et sains pour que le plaisir soit partagé entre vos papilles, 
+                  et votre santé. Passez sur l'onglet des plats pour avoir un apperçu de ceux proposés cette semaine !
+                  Les plats changeront en fonction des produits proposés par la ferme où je m'approvisionne. 
                 </Card.Text>
               </Card.Body>
             </Card>
           </Col>
-          <Col md={4}>
-            <Card className="shadow-sm border-0 bg-white">
+        </Row>
+
+        <Row className="mb-4 justify-content-start">
+          <Col md={7}>
+            <Card className="shadow-sm product-card">
               <Card.Body>
-                <Card.Title>Le projet</Card.Title>
-                <Card.Text>
-                  Proposer une expérience simple pour commander des plats préparés et permettre à l'administrateur de gérer facilement le catalogue.
+                <Card.Title style={{ color: "var(--brand-green)" }}>Comment ça marche ?</Card.Title>
+                <Card.Text className="text-start" style={{ color: "var(--brand-text)" }}>
+                  La formule est flexible, vous commandez les plats que vous souhaitez, ainsi que le nombre de portions 
+                  sur l'onglet de commande. Vous faites un paiement en virement ou via Wero/Sumeria, en mettant votre
+                  numéro de commande en référence. Je vous confirme la réception par mail. 
+                  Le lundi soir, je vous envoie un mail de rappel, avec l'adresse, l'horaire et le contenu de commande. 
+                  J'ajoute également les consignes de transport et de conservation. Veuillez d'ailleurs apporter une 
+                  glacière (avec des blocs, ou les ajouter à votre panier, ils sont consignés) pour un respect de la 
+                  chaine du froid.
                 </Card.Text>
               </Card.Body>
             </Card>
           </Col>
-          <Col md={4}>
-            <Card className="shadow-sm border-0 bg-white">
+        </Row>
+
+        <Row className="mb-4 justify-content-end">
+          <Col md={7}>
+            <Card className="shadow-sm product-card">
               <Card.Body>
-                <Card.Title>Comment ça marche</Card.Title>
-                <Card.Text>
-                  Parcourez les plats, connectez-vous, ajoutez vos quantités puis passez commande. Les commandes sont suivies et gérées par l'admin.
+                <Card.Title style={{ color: "var(--brand-green)" }}>Les petits plus durables :</Card.Title>
+                <Card.Text className="text-start" style={{ color: "var(--brand-text)" }}>
+                  Les contenants et les blocs sont consignés, pensez à les rapporter la fois suivante!
+                  Les produits sont issus de circuit court, le plus souvent bio et locaux. Ils seront toujours de 
+                  saison, selon les disponibilités. 
+                  Consommer moins de viande réduit l'impact carbone de notre alimentation, le test des versions 
+                  végétariennes des plats est encouragé par une réduction sur le prix !
                 </Card.Text>
               </Card.Body>
             </Card>
+          </Col>
+        </Row>
+
+        <Row className="mb-4">
+          <Col className="text-center">
+            <div className="py-4 px-3">
+              <h2 style={{ color: "var(--brand-green)", fontSize: "2.5rem", fontWeight: "700", marginBottom: "0.5rem" }}>
+                Bonne exploration, et bon appétit !
+              </h2>
+              <p style={{ color: "var(--brand-orange)", fontSize: "1.25rem", fontWeight: "600", marginBottom: "0" }}>
+                Laure
+              </p>
+            </div>
           </Col>
         </Row>
       </>
@@ -615,9 +666,9 @@ export default function App() {
           <p className="text-muted mb-0">
             {!isLoaded 
               ? "Chargement..."
-              : isSignedIn
-              ? `Role courant: ${roleLabels[sessionRole]}`
-              : "Non connecté"}
+              : isAdmin
+              ? "Mode admin"
+              : ""}
           </p>
         </Col>
         <Col className="text-end">
