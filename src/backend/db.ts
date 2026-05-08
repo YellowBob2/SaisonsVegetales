@@ -3,9 +3,17 @@ import { dirname, join } from "node:path";
 import { Database } from "bun:sqlite";
 
 const dbFile = join(import.meta.dir, process.env.DATABASE_URL ?? "../../data/saisons.db");
-mkdirSync(dirname(dbFile), { recursive: true });
+console.log("DB file path:", dbFile);
+try {
+  mkdirSync(dirname(dbFile), { recursive: true });
+  console.log("Database directory created successfully");
+} catch (error) {
+  console.error("Failed to create database directory:", error);
+  throw error;
+}
 
 export const db = new Database(dbFile, { create: true });
+console.log("Database initialized successfully");
 
 db.run("PRAGMA foreign_keys = ON");
 
