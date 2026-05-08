@@ -9,46 +9,29 @@ export const db = new Database(dbFile, { create: true });
 
 db.run("PRAGMA foreign_keys = ON");
 
+// Create base table if it doesn't exist
+db.run(`
+  CREATE TABLE IF NOT EXISTS plats (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    available_until DATE NOT NULL,
+    price REAL NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+// Add missing columns if they don't exist
 const platColumns = db.prepare("PRAGMA table_info(plats)").all() as Array<{ name: string }>;
 const hasPlatDescription = platColumns.some((row) => row.name === "description");
 const hasPlatAllergenes = platColumns.some((row) => row.name === "allergenes");
 
-if (!hasPlatDescription || !hasPlatAllergenes) {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS plats (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      available_until DATE NOT NULL,
-      price REAL NOT NULL,
-      stock INTEGER NOT NULL DEFAULT 0,
-      description TEXT NOT NULL DEFAULT '',
-      allergenes TEXT NOT NULL DEFAULT '[]',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  if (!hasPlatDescription) {
-    db.run("ALTER TABLE plats ADD COLUMN description TEXT NOT NULL DEFAULT ''");
-  }
-
-  if (!hasPlatAllergenes) {
-    db.run("ALTER TABLE plats ADD COLUMN allergenes TEXT NOT NULL DEFAULT '[]'");
-  }
+if (!hasPlatDescription) {
+  db.run("ALTER TABLE plats ADD COLUMN description TEXT NOT NULL DEFAULT ''");
 }
 
-if (hasPlatDescription && hasPlatAllergenes) {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS plats (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      available_until DATE NOT NULL,
-      price REAL NOT NULL,
-      stock INTEGER NOT NULL DEFAULT 0,
-      description TEXT NOT NULL DEFAULT '',
-      allergenes TEXT NOT NULL DEFAULT '[]',
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+if (!hasPlatAllergenes) {
+  db.run("ALTER TABLE plats ADD COLUMN allergenes TEXT NOT NULL DEFAULT '[]'");
 }
 
 db.run(`
