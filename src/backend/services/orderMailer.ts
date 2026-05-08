@@ -12,11 +12,29 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#039;");
 }
 
+function getNextTuesdayDate(): Date {
+  const today = new Date();
+  const daysUntilTuesday = (2 - today.getDay() + 7) % 7 || 7;
+  const nextTuesday = new Date(today);
+  nextTuesday.setDate(today.getDate() + daysUntilTuesday);
+  return nextTuesday;
+}
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric"
+  });
+}
+
 function buildOrderText(
   userName: string,
   orderedItems: OrderedPlatItem[],
   unavailableIds: number[],
-  notFoundIds: number[]
+  notFoundIds: number[],
+  nextTuesdayDate: Date
 ): string {
   const lines = [`Bonjour ${userName},`, "", "Merci pour votre commande chez Saisons Végétales.", ""]; 
 
@@ -36,6 +54,8 @@ function buildOrderText(
     lines.push(`Les articles avec les identifiants suivants n'ont pas été trouvés : ${notFoundIds.join(", ")}.`);
   }
 
+  lines.push("", `Retrait prévu : ${formatDate(nextTuesdayDate)} en fin de journée.`);
+  lines.push("", "L'adresse précise et l'horaire de retrait vous seront communiqués par mail de rappel la veille.");
   lines.push("", "Nous vous contacterons si nécessaire.", "", "Cordialement,", "L'équipe Saisons Végétales");
   return lines.join("\n");
 }
@@ -44,7 +64,8 @@ function buildOrderHtml(
   userName: string,
   orderedItems: OrderedPlatItem[],
   unavailableIds: number[],
-  notFoundIds: number[]
+  notFoundIds: number[],
+  nextTuesdayDate: Date
 ): string {
   const safeName = escapeHtml(userName);
   const orderedLines = orderedItems
@@ -69,6 +90,10 @@ function buildOrderHtml(
       ${orderedItems.length > 0 ? `<p>Voici le détail de votre commande :</p><ul>${orderedLines}</ul>` : "<p>Aucun article n'a été commandé.</p>"}
       ${unavailableSection}
       ${notFoundSection}
+      <div style="background-color: #fff7e3; border-left: 4px solid #FFA43B; padding: 12px; margin: 16px 0; border-radius: 4px;">
+        <p style="margin: 0; font-weight: 600;">Retrait prévu : <strong>${escapeHtml(formatDate(nextTuesdayDate))}</strong> en fin de journée.</p>
+        <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #555;">L'adresse précise et l'horaire de retrait vous seront communiqués par mail de rappel la veille.</p>
+      </div>
       <p>Nous vous contacterons si nécessaire.</p>
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
       <p style="color: #6b7280;">Saisons Végétales</p>
@@ -98,9 +123,10 @@ export async function sendOrderConfirmationEmail(params: {
     throw new Error("Impossible d'envoyer l'email sans adresse du destinataire.");
   }
 
+  const nextTuesdayDate = getNextTuesdayDate();
   const subject = `Confirmation de commande – Saisons Végétales`;
-  const text = buildOrderText(userName, orderedItems, unavailableIds, notFoundIds);
-  const html = buildOrderHtml(userName, orderedItems, unavailableIds, notFoundIds);
+  const text = buildOrderText(userName, orderedItems, unavailableIds, notFoundIds, nextTuesdayDate);
+  const html = buildOrderHtml(userName, orderedItems, unavailableIds, notFoundIds, nextTuesdayDate);
 
   const resend = await createResendClient();
   await resend.emails.send({
