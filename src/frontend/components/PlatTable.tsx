@@ -51,6 +51,8 @@ export function PlatTable({
           <th>ID</th>
           <th>Nom</th>
           <th>Disponible jusqu'au</th>
+          <th>Description</th>
+          <th>Allergènes</th>
           <th>Prix</th>
           <th>Stock</th>
           <th>Actions</th>
@@ -87,11 +89,32 @@ export function PlatTable({
               <td>
                 {isEditing ? (
                   <Form.Control
+                    type="date"
                     value={editForm.available_until}
                     onChange={(e) => onEditFormChange({ ...editForm, available_until: e.target.value })}
                   />
                 ) : (
                   plat.available_until
+                )}
+              </td>
+              <td>
+                {isEditing ? (
+                  <Form.Control
+                    value={editForm.description}
+                    onChange={(e) => onEditFormChange({ ...editForm, description: e.target.value })}
+                  />
+                ) : (
+                  plat.description || "-"
+                )}
+              </td>
+              <td>
+                {isEditing ? (
+                  <Form.Control
+                    value={editForm.allergenes}
+                    onChange={(e) => onEditFormChange({ ...editForm, allergenes: e.target.value })}
+                  />
+                ) : (
+                  plat.allergenes.length > 0 ? plat.allergenes.join(", ") : "Aucun"
                 )}
               </td>
               <td>

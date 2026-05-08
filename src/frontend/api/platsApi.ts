@@ -1,14 +1,14 @@
 import type { DemoRole } from "../auth/roles";
 import type { Plat, PlatPayload } from "../types";
 
-function authHeaders(token: string): HeadersInit {
+export function authHeaders(token: string): HeadersInit {
   return {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`
   };
 }
 
-async function parseOrThrow<T>(response: Response, fallbackMessage: string): Promise<T> {
+export async function parseOrThrow<T>(response: Response, fallbackMessage: string): Promise<T> {
   if (!response.ok) {
     throw new Error(fallbackMessage);
   }

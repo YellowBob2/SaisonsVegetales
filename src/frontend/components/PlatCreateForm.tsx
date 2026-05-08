@@ -19,8 +19,9 @@ export function PlatCreateForm({ value, disabled, onSubmit, onChange }: PlatCrea
             onChange={(e) => onChange({ ...value, name: e.target.value })}
           />
         </Col>
-        <Col md={3}>
+        <Col md={2}>
           <Form.Control
+            type="date"
             placeholder="Disponible jusqu'au"
             value={value.available_until}
             onChange={(e) => onChange({ ...value, available_until: e.target.value })}
@@ -43,7 +44,23 @@ export function PlatCreateForm({ value, disabled, onSubmit, onChange }: PlatCrea
             onChange={(e) => onChange({ ...value, stock: e.target.value })}
           />
         </Col>
-        <Col md={2}>
+        <Col md={3}>
+          <Form.Control
+            placeholder="Allergènes (séparés par des virgules)"
+            value={value.allergenes}
+            onChange={(e) => onChange({ ...value, allergenes: e.target.value })}
+          />
+        </Col>
+        <Col xs={12}>
+          <Form.Control
+            as="textarea"
+            rows={2}
+            placeholder="Description"
+            value={value.description}
+            onChange={(e) => onChange({ ...value, description: e.target.value })}
+          />
+        </Col>
+        <Col xs={12}>
           <Button type="submit" className="w-100" disabled={disabled}>
             Ajouter
           </Button>
